@@ -1,7 +1,7 @@
 <script>
 	import { spring } from "svelte/motion";
-	import { fade } from "svelte/transition";
-	import { X, Check, Phone } from "lucide-svelte";
+	import { fade, fly } from "svelte/transition";
+	import { X, Check, Phone, Users, History } from "lucide-svelte";
 
 	let { initialProfiles = [] } = $props();
 
@@ -19,12 +19,16 @@
 	let matchedPhoneNumber = $state("");
 	let matchedName = $state("");
 
+	let showHistory = $state(false);
+	let matchedHistory = $state([]);
+	let selectedHistoryProfile = $state(null);
+
 	function generatePhoneNumber() {
 		return `+1 (${Math.floor(Math.random() * 900) + 100}) ${Math.floor(Math.random() * 900) + 100}-${Math.floor(Math.random() * 9000) + 1000}`;
 	}
 
 	function handlePointerDown(e) {
-		if (profiles.length === 0) return;
+		if (showMatchModal || selectedHistoryProfile || profiles.length === 0) return;
 		isDragging = true;
 		startX = e.clientX;
 		startY = e.clientY;
@@ -32,7 +36,7 @@
 	}
 
 	function handlePointerMove(e) {
-		if (!isDragging) return;
+		if (showMatchModal || selectedHistoryProfile || !isDragging) return;
 		const dx = e.clientX - startX;
 		const dy = e.clientY - startY;
 		x.set(dx);
@@ -41,7 +45,7 @@
 	}
 
 	function handlePointerUp(e) {
-		if (!isDragging) return;
+		if (showMatchModal || selectedHistoryProfile || !isDragging) return;
 		isDragging = false;
 		const currentX = $x;
 
@@ -59,6 +63,12 @@
 				if (direction === 1) {
 					matchedName = currentProfile.name;
 					matchedPhoneNumber = generatePhoneNumber();
+					matchedHistory.push({
+						profile: currentProfile,
+						name: currentProfile.name,
+						role: currentProfile.role,
+						phone: matchedPhoneNumber
+					});
 					showMatchModal = true;
 				}
 			}, 300);
@@ -70,6 +80,7 @@
 	}
 
 	function swipeButton(direction) {
+		if (showMatchModal || selectedHistoryProfile || profiles.length === 0) return;
 		x.set(window.innerWidth * direction);
 		setTimeout(() => {
 			let currentProfile = profiles[0];
@@ -81,12 +92,19 @@
 			if (direction === 1) {
 				matchedName = currentProfile.name;
 				matchedPhoneNumber = generatePhoneNumber();
+				matchedHistory.push({
+					profile: currentProfile,
+					name: currentProfile.name,
+					role: currentProfile.role,
+					phone: matchedPhoneNumber
+				});
 				showMatchModal = true;
 			}
 		}, 300);
 	}
 
 	function handleKeydown(e) {
+		if (showMatchModal || selectedHistoryProfile) return;
 		if (e.key === "ArrowLeft") {
 			swipeButton(-1);
 		} else if (e.key === "ArrowRight") {
@@ -101,6 +119,18 @@
 	id="deck"
 	class="w-full h-[100dvh] pt-16 pb-8 flex flex-col items-center relative overflow-hidden bg-[#0D0D12]"
 >
+	<button 
+		onclick={() => showHistory = !showHistory}
+		class="absolute top-6 right-6 z-40 bg-[#1A1A24]/80 backdrop-blur-md p-3 rounded-full border border-[#2A2A35] hover:border-gray-400 text-white shadow-xl transition-all"
+	>
+		<History size={24} />
+		{#if matchedHistory.length > 0}
+			<span class="absolute -top-1 -right-1 bg-[#8B5CF6] text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
+				{matchedHistory.length}
+			</span>
+		{/if}
+	</button>
+
 	<div
 		class="relative w-full max-w-[460px] md:max-w-[560px] flex-1 min-h-0 z-10 perspective-1000"
 	>
@@ -289,6 +319,98 @@
 			>
 				Keep Swiping
 			</button>
+		</div>
+	</div>
+{/if}
+
+{#if showHistory}
+	<div 
+		class="fixed top-0 right-0 h-[100dvh] w-80 sm:w-96 bg-[#1A1A24] border-l border-[#2A2A35] shadow-2xl z-50 flex flex-col"
+		transition:fly={{ x: 384, duration: 300 }}
+	>
+		<div class="p-6 border-b border-[#2A2A35] flex items-center justify-between">
+			<h2 class="text-xl font-bold text-white tracking-wide flex items-center gap-2">
+				<Users size={20} class="text-[#8B5CF6]" />
+				Match History
+			</h2>
+			<button onclick={() => showHistory = false} class="text-gray-400 hover:text-white transition-colors">
+				<X size={24} />
+			</button>
+		</div>
+		<div class="flex-1 overflow-y-auto p-4 flex flex-col gap-4 custom-scrollbar">
+			{#if matchedHistory.length === 0}
+				<div class="text-center text-gray-500 mt-10 text-sm font-mono border border-dashed border-[#2A2A35] p-6 rounded-2xl">
+					No matches yet.<br />Keep swiping to build your network!
+				</div>
+			{/if}
+			{#each matchedHistory as match}
+				<button 
+					onclick={() => selectedHistoryProfile = match}
+					class="bg-[#2A2A35]/50 border border-[#FAF8F5]/10 rounded-2xl p-4 flex flex-col gap-3 shadow-lg text-left hover:bg-[#2A2A35] hover:border-[#8B5CF6]/50 transition-all cursor-pointer w-full"
+				>
+					<div>
+						<h3 class="text-white font-bold text-lg">{match.name}</h3>
+						<p class="text-xs text-gray-400 mt-1 line-clamp-1">{match.role}</p>
+					</div>
+					<div class="bg-[#0D0D12] rounded-xl p-3 flex items-center gap-3 w-full">
+						<div class="w-8 h-8 rounded-full bg-[#8B5CF6]/20 flex items-center justify-center shrink-0">
+							<Phone size={14} class="text-[#8B5CF6]" />
+						</div>
+						<span class="text-[#FAF8F5] text-sm font-mono tracking-wider">{match.phone}</span>
+					</div>
+				</button>
+			{/each}
+		</div>
+	</div>
+{/if}
+
+{#if selectedHistoryProfile}
+	<div class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-6" transition:fade>
+		<div class="bg-[#1A1A24] border border-[#2A2A35] rounded-3xl p-8 max-w-2xl w-full flex flex-col gap-6 shadow-2xl relative">
+			<button class="absolute top-6 right-6 text-gray-400 hover:text-white" onclick={() => selectedHistoryProfile = null}>
+				<X size={24} />
+			</button>
+			
+			<div>
+				<div class="flex items-center justify-between mb-2 pr-8">
+					<h2 class="text-3xl font-bold text-white">{selectedHistoryProfile.name}</h2>
+					<div class="flex items-center gap-2 bg-[#8B5CF6]/20 px-3 py-1.5 rounded-full border border-[#8B5CF6]/30">
+						<Phone size={14} class="text-[#8B5CF6]" />
+						<span class="text-[#FAF8F5] text-sm font-mono font-bold tracking-wider">{selectedHistoryProfile.phone}</span>
+					</div>
+				</div>
+				<h3 class="text-xl text-gray-400">{selectedHistoryProfile.role}</h3>
+			</div>
+
+			<div class="text-lg text-gray-300 leading-relaxed border-l-4 border-[#2A2A35] pl-4 max-h-[30vh] overflow-y-auto custom-scrollbar">
+				{selectedHistoryProfile.profile.bio}
+			</div>
+
+			<div>
+				<h3 class="text-gray-400 font-bold text-xs uppercase tracking-widest font-mono mb-3">Core Expertise</h3>
+				<div class="flex flex-wrap gap-2">
+					{#each selectedHistoryProfile.profile.expertise as exp}
+						<span class="px-3 py-1 bg-[#2A2A35] border border-[#FAF8F5]/10 text-gray-300 rounded-full text-sm">{exp}</span>
+					{/each}
+				</div>
+			</div>
+			
+			{#if selectedHistoryProfile.profile.history && selectedHistoryProfile.profile.history.length > 0}
+			<div>
+				<h3 class="text-gray-400 font-bold text-xs uppercase tracking-widest font-mono mb-3">Career History</h3>
+				<div class="flex flex-col gap-2 max-h-[25vh] overflow-y-auto custom-scrollbar pr-2">
+					{#each selectedHistoryProfile.profile.history as job}
+						<div class="bg-[#0D0D12] border border-[#2A2A35] rounded-xl p-4 flex items-center justify-between">
+							<div class="flex flex-col text-left">
+								<span class="font-bold text-white">{job.role}</span>
+								<span class="text-gray-400 text-sm">{job.company}</span>
+							</div>
+							<span class="text-[#8B5CF6] font-mono text-sm font-bold">{job.years}</span>
+						</div>
+					{/each}
+				</div>
+			</div>
+			{/if}
 		</div>
 	</div>
 {/if}

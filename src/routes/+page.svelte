@@ -8,7 +8,7 @@
 	import { jobProfiles } from '$lib/jobs';
 	import { searchCache } from '$lib/searchCache';
 
-	const GEMINI_API_KEY = 'AIzaSyCH5W-Ah_4bTsuP_5Ogrpj0EZBozw7bn3Q';
+	const GEMINI_API_KEY = 'PUT YO API KEY HERE';
 
 	let userType = $state<"provider" | "seeker" | null>(null);
 	let searchQuery = $state("");
@@ -75,12 +75,25 @@
 			// Fuzzy search against the database of profiles
 			const scoredProfiles = targetDatabase.map(profile => {
 				let score = 0;
-				// Combine all searchable text from the profile into one lowercase string
+				
+				// Exact or partial expertise matches (High weight)
+				profile.expertise.forEach((e: string) => {
+					if (extractedSkills.some(s => s.toLowerCase() === e.toLowerCase() || e.toLowerCase().includes(s.toLowerCase()))) {
+						score += 10;
+					}
+				});
+
+				// Role matches (Medium-High weight)
+				extractedSkills.forEach(s => {
+					if (profile.role.toLowerCase().includes(s.toLowerCase())) {
+						score += 5;
+					}
+				});
+
+				// Combine all searchable text from the profile into one lowercase string for fallback
 				const searchString = [
-					profile.role,
 					profile.bio,
-					...profile.expertise,
-					...profile.history.map(h => h.role + ' ' + h.company)
+					...profile.history.map((h: any) => h.role + ' ' + h.company)
 				].join(' ').toLowerCase();
 				
 				extractedSkills.forEach((skill: string) => {
@@ -91,7 +104,7 @@
 					
 					// Check partial word matches
 					lowerSkill.split(' ').forEach(word => {
-						if (word.length > 2 && searchString.includes(word)) {
+						if (word.length > 3 && searchString.includes(word)) {
 							score += 1;
 						}
 					});
@@ -126,6 +139,12 @@
 		hasSearched = false;
 		searchQuery = "";
 		userType = null;
+		filteredProfiles = [];
+	}
+
+	function refineSearch() {
+		hasSearched = false;
+		// Keep searchQuery and userType intact so they can edit it
 		filteredProfiles = [];
 	}
 </script>
@@ -268,13 +287,29 @@
 	<!-- STEP 3: RESULTS (SWIPE DECK) -->
 	{#if hasSearched}
 		<div in:fade={{ duration: 600, delay: 400 }} class="absolute inset-0 flex flex-col">
-			<div class="p-6 z-40 absolute top-0 left-0 w-full flex justify-between items-center pointer-events-none">
-				<button 
-					onclick={resetSearch}
-					class="pointer-events-auto px-6 py-2 bg-[#1A1A24]/80 backdrop-blur-md rounded-full border border-[#2A2A35] hover:border-gray-400 transition-colors text-sm font-bold tracking-wider text-white"
-				>
-					NEW SEARCH
-				</button>
+			<div class="p-6 z-40 absolute top-0 left-0 w-full flex flex-col md:flex-row justify-between items-start md:items-center pointer-events-none gap-4">
+				<div class="flex gap-3 pointer-events-auto">
+					<button 
+						onclick={resetSearch}
+						class="px-5 py-2 bg-[#1A1A24]/80 backdrop-blur-md rounded-full border border-[#2A2A35] hover:border-gray-400 transition-colors text-sm font-bold tracking-wider text-white shadow-lg"
+					>
+						NEW SEARCH
+					</button>
+					<button 
+						onclick={refineSearch}
+						class="px-5 py-2 bg-[#2A2A35]/80 backdrop-blur-md rounded-full border border-[#FAF8F5]/10 hover:border-[#8B5CF6]/50 transition-colors text-sm font-bold tracking-wider text-[#8B5CF6] shadow-lg flex items-center gap-2"
+					>
+						<Search size={14} /> REFINE SEARCH
+					</button>
+				</div>
+				
+				<div class="flex flex-wrap gap-2 justify-end pointer-events-auto max-w-2xl">
+					{#each extractedSkills as skill}
+						<span class="px-3 py-1 bg-[#1A1A24]/90 backdrop-blur-md border border-[#8B5CF6]/30 text-[#FAF8F5] text-xs font-mono font-bold rounded-md shadow-sm">
+							{skill}
+						</span>
+					{/each}
+				</div>
 			</div>
 
 			{#if filteredProfiles.length > 0}
