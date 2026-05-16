@@ -1,6 +1,7 @@
 <script>
 	import { spring } from "svelte/motion";
-	import { X, Check } from "lucide-svelte";
+	import { fade } from "svelte/transition";
+	import { X, Check, Phone } from "lucide-svelte";
 
 	let { initialProfiles = [] } = $props();
 
@@ -10,9 +11,17 @@
 	let y = spring(0, { stiffness: 0.1, damping: 0.4 });
 	let rotation = spring(0, { stiffness: 0.1, damping: 0.4 });
 
-	let isDragging = false;
+	let isDragging = $state(false);
 	let startX = 0;
 	let startY = 0;
+
+	let showMatchModal = $state(false);
+	let matchedPhoneNumber = $state("");
+	let matchedName = $state("");
+
+	function generatePhoneNumber() {
+		return `+1 (${Math.floor(Math.random() * 900) + 100}) ${Math.floor(Math.random() * 900) + 100}-${Math.floor(Math.random() * 9000) + 1000}`;
+	}
 
 	function handlePointerDown(e) {
 		if (profiles.length === 0) return;
@@ -46,6 +55,12 @@
 				x.set(0, { hard: true });
 				y.set(0, { hard: true });
 				rotation.set(0, { hard: true });
+
+				if (direction === 1) {
+					matchedName = currentProfile.name;
+					matchedPhoneNumber = generatePhoneNumber();
+					showMatchModal = true;
+				}
 			}, 300);
 		} else {
 			x.set(0);
@@ -62,6 +77,12 @@
 			x.set(0, { hard: true });
 			y.set(0, { hard: true });
 			rotation.set(0, { hard: true });
+
+			if (direction === 1) {
+				matchedName = currentProfile.name;
+				matchedPhoneNumber = generatePhoneNumber();
+				showMatchModal = true;
+			}
 		}, 300);
 	}
 
@@ -242,6 +263,35 @@
 		</button>
 	</div>
 </section>
+
+{#if showMatchModal}
+	<div class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6" transition:fade>
+		<div class="bg-[#1A1A24] border border-[#2A2A35] rounded-3xl p-8 max-w-sm w-full flex flex-col items-center gap-6 shadow-2xl relative text-center">
+			<button class="absolute top-4 right-4 text-gray-400 hover:text-white" onclick={() => showMatchModal = false}>
+				<X size={24} />
+			</button>
+			<div class="w-20 h-20 bg-[#8B5CF6]/20 rounded-full flex items-center justify-center mb-2">
+				<Check size={40} class="text-[#8B5CF6]" strokeWidth={3} />
+			</div>
+			<h2 class="text-3xl font-bold text-white font-serif italic">It's a Match!</h2>
+			<p class="text-gray-400">You connected with {matchedName}</p>
+			
+			<div class="w-full bg-[#0D0D12] rounded-xl p-4 border border-[#2A2A35] mt-2">
+				<p class="text-xs text-gray-500 uppercase tracking-widest font-bold mb-1 flex items-center justify-center gap-2">
+					<Phone size={14} /> Contact Number
+				</p>
+				<p class="text-[#FAF8F5] text-xl font-mono font-bold tracking-wider">{matchedPhoneNumber}</p>
+			</div>
+
+			<button 
+				onclick={() => showMatchModal = false}
+				class="w-full py-4 rounded-xl bg-[#8B5CF6] text-white font-bold hover:opacity-90 transition-opacity mt-2 tracking-wide shadow-lg shadow-[#8B5CF6]/20"
+			>
+				Keep Swiping
+			</button>
+		</div>
+	</div>
+{/if}
 
 <style>
 	.custom-scrollbar::-webkit-scrollbar {

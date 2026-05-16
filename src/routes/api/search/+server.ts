@@ -7,7 +7,7 @@ import { json } from '@sveltejs/kit';
 */
 
 import { GoogleGenAI } from '@google/genai';
-import { swipeProfiles } from '$lib/data';
+import { swipeProfiles } from '$lib/talent';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
