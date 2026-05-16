@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-obsidian: #0D0D12;
+  --color-brand-champagne: #C9A84C;
+  --color-brand-ivory: #FAF8F5;
+  --color-brand-slate: #2A2A35;
+  --font-sans: "Inter", sans-serif;
+  --font-serif: "Playfair Display", serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+:root {
+  --primary: #FAF8F5; /* Text on dark bg */
+  --bg: #0D0D12; /* Dark background */
+  --accent: #C9A84C;
+  --dark: #2A2A35;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--primary);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-sans);
+  letter-spacing: -0.02em;
+}
+
+.font-drama {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 600;
+}
+
+.font-data {
+  font-family: var(--font-mono);
+}
+
+/* Global Noise Overlay */
+.noise-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* Magnetic Button Base */
+.btn-magnetic {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.btn-magnetic:hover {
+  transform: scale(1.03);
+}
+
+.btn-magnetic::before {
+  content: "";
+  position: absolute;
+  top: 0; left: -100%;
+  width: 100%; height: 100%;
+  background-color: rgba(255, 255, 255, 0.1);
+  transition: left 0.4s ease;
+  z-index: 0;
+}
+
+.btn-magnetic:hover::before {
+  left: 0;
+}
+
+.btn-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* Rounded radius system */
+.rounded-system {
+  border-radius: 2rem;
+}
+.rounded-system-lg {
+  border-radius: 3rem;
+}
