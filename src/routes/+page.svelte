@@ -154,12 +154,7 @@
 		filteredProfiles = [];
 	}
 
-	function handleProfileClick(profile: any) {
-		// Move clicked profile to the front of the list
-		filteredProfiles = [profile, ...filteredProfiles.filter(p => p.id !== profile.id)];
-		// Switch to swipe view to interact with it
-		activeTab = "swipe";
-	}
+
 </script>
 
 <svelte:head>
@@ -350,7 +345,7 @@
 					{#if activeTab === 'swipe'}
 						<SwipeDeck initialProfiles={filteredProfiles} bind:matchedHistory />
 					{:else}
-						<NetworkGraph {filteredProfiles} {extractedSkills} {searchQuery} {matchedHistory} onNodeClick={handleProfileClick} />
+						<NetworkGraph {filteredProfiles} {extractedSkills} {searchQuery} bind:matchedHistory />
 					{/if}
 				{/key}
 			{:else}

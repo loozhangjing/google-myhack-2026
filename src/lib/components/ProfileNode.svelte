@@ -5,16 +5,16 @@
 	let { data } = $props();
 	
 	// data has: profile, score, isMatched
-	let profile = data.profile;
-	let score = data.score || 1;
-	let isMatched = data.isMatched || false;
+	let profile = $derived(data.profile);
+	let score = $derived(data.score || 1);
+	let isMatched = $derived(data.isMatched || false);
 
 	// Scale and border calculation based on score
-	let scale = Math.max(0.6, Math.min(0.6 + (score / 15), 1.6)); // wider range, 0.6x to 1.6x
-	let brightness = Math.max(0.1, Math.min(score / 10, 1.0)); // wider range, 0.1 to 1.0
+	let scale = $derived(Math.max(0.6, Math.min(0.6 + (score / 15), 1.6))); // wider range, 0.6x to 1.6x
+	let brightness = $derived(Math.max(0.1, Math.min(score / 10, 1.0))); // wider range, 0.1 to 1.0
 	
-	let borderColor = isMatched ? '#8B5CF6' : `rgba(201, 168, 76, ${brightness})`;
-	let shadowColor = isMatched ? 'rgba(139, 92, 246, 0.6)' : `rgba(201, 168, 76, ${brightness * 0.6})`;
+	let borderColor = $derived(isMatched ? '#8B5CF6' : `rgba(201, 168, 76, ${brightness})`);
+	let shadowColor = $derived(isMatched ? 'rgba(139, 92, 246, 0.6)' : `rgba(201, 168, 76, ${brightness * 0.6})`);
 </script>
 
 <div 
