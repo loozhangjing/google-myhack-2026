@@ -3,7 +3,7 @@
 	import { fade, fly } from "svelte/transition";
 	import { X, Check, Phone, Users, History } from "lucide-svelte";
 
-	let { initialProfiles = [] } = $props();
+	let { initialProfiles = [], matchedHistory = $bindable([]) } = $props();
 
 	let profiles = $state([...initialProfiles]);
 
@@ -20,7 +20,6 @@
 	let matchedName = $state("");
 
 	let showHistory = $state(false);
-	let matchedHistory = $state([]);
 	let selectedHistoryProfile = $state(null);
 
 	function generatePhoneNumber() {

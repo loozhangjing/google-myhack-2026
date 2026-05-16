@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { fade, slide } from "svelte/transition";
 	import SwipeDeck from "$lib/components/SwipeDeck.svelte";
-	import { Search, Sparkles, Briefcase, UserRound } from "lucide-svelte";
+	import NetworkGraph from "$lib/components/NetworkGraph.svelte";
+	import { Search, Sparkles, Briefcase, UserRound, Network } from "lucide-svelte";
 
 	import { GoogleGenAI } from '@google/genai';
 	import { swipeProfiles } from '$lib/talent';
@@ -16,6 +17,9 @@
 	let hasSearched = $state(false);
 	let filteredProfiles = $state<any[]>([]);
 	let extractedSkills = $state<string[]>([]);
+	
+	let matchedHistory = $state<any[]>([]);
+	let activeTab = $state<"swipe" | "network">("swipe");
 
 	const ai = new GoogleGenAI({apiKey: GEMINI_API_KEY});
 
@@ -140,12 +144,21 @@
 		searchQuery = "";
 		userType = null;
 		filteredProfiles = [];
+		matchedHistory = [];
+		activeTab = "swipe";
 	}
 
 	function refineSearch() {
 		hasSearched = false;
 		// Keep searchQuery and userType intact so they can edit it
 		filteredProfiles = [];
+	}
+
+	function handleProfileClick(profile: any) {
+		// Move clicked profile to the front of the list
+		filteredProfiles = [profile, ...filteredProfiles.filter(p => p.id !== profile.id)];
+		// Switch to swipe view to interact with it
+		activeTab = "swipe";
 	}
 </script>
 
@@ -287,34 +300,58 @@
 	<!-- STEP 3: RESULTS (SWIPE DECK) -->
 	{#if hasSearched}
 		<div in:fade={{ duration: 600, delay: 400 }} class="absolute inset-0 flex flex-col">
-			<div class="p-6 z-40 absolute top-0 left-0 w-full flex flex-col md:flex-row justify-between items-start md:items-center pointer-events-none gap-4">
-				<div class="flex gap-3 pointer-events-auto">
-					<button 
-						onclick={resetSearch}
-						class="px-5 py-2 bg-[#1A1A24]/80 backdrop-blur-md rounded-full border border-[#2A2A35] hover:border-gray-400 transition-colors text-sm font-bold tracking-wider text-white shadow-lg"
-					>
-						NEW SEARCH
-					</button>
-					<button 
-						onclick={refineSearch}
-						class="px-5 py-2 bg-[#2A2A35]/80 backdrop-blur-md rounded-full border border-[#FAF8F5]/10 hover:border-[#8B5CF6]/50 transition-colors text-sm font-bold tracking-wider text-[#8B5CF6] shadow-lg flex items-center gap-2"
-					>
-						<Search size={14} /> REFINE SEARCH
-					</button>
-				</div>
+			<div class="p-6 z-40 absolute top-0 left-0 w-full flex justify-between items-start pointer-events-none gap-4">
 				
-				<div class="flex flex-wrap gap-2 justify-end pointer-events-auto max-w-2xl">
-					{#each extractedSkills as skill}
-						<span class="px-3 py-1 bg-[#1A1A24]/90 backdrop-blur-md border border-[#8B5CF6]/30 text-[#FAF8F5] text-xs font-mono font-bold rounded-md shadow-sm">
-							{skill}
-						</span>
-					{/each}
+				<!-- Left Side: Buttons and Categories -->
+				<div class="flex flex-col gap-4 max-w-xs">
+					<div class="flex gap-3 pointer-events-auto">
+						<button 
+							onclick={resetSearch}
+							class="px-5 py-2 bg-[#1A1A24]/80 backdrop-blur-md rounded-full border border-[#2A2A35] hover:border-gray-400 transition-colors text-sm font-bold tracking-wider text-white shadow-lg"
+						>
+							NEW SEARCH
+						</button>
+						<button 
+							onclick={refineSearch}
+							class="px-5 py-2 bg-[#2A2A35]/80 backdrop-blur-md rounded-full border border-[#FAF8F5]/10 hover:border-[#8B5CF6]/50 transition-colors text-sm font-bold tracking-wider text-[#8B5CF6] shadow-lg flex items-center gap-2"
+						>
+							<Search size={14} /> REFINE
+						</button>
+					</div>
+
+					<div class="flex flex-col gap-2 pointer-events-auto">
+						{#each extractedSkills as skill}
+							<span class="px-3 py-2 bg-[#1A1A24]/90 backdrop-blur-md border border-[#8B5CF6]/30 text-[#FAF8F5] text-xs font-mono font-bold rounded-md shadow-sm text-left break-words">
+								{skill}
+							</span>
+						{/each}
+					</div>
+				</div>
+
+				<!-- Center: View Toggle -->
+				<div class="absolute top-6 left-1/2 -translate-x-1/2 flex gap-2 pointer-events-auto bg-[#1A1A24]/80 backdrop-blur-md p-1 rounded-full border border-[#2A2A35]">
+					<button 
+						onclick={() => activeTab = 'swipe'}
+						class="px-4 py-1.5 rounded-full text-sm font-bold tracking-wide transition-colors {activeTab === 'swipe' ? 'bg-[#8B5CF6] text-white' : 'text-gray-400 hover:text-white'}"
+					>
+						Swipe
+					</button>
+					<button 
+						onclick={() => activeTab = 'network'}
+						class="px-4 py-1.5 rounded-full text-sm font-bold tracking-wide transition-colors flex items-center gap-1.5 {activeTab === 'network' ? 'bg-[#C9A84C] text-[#0D0D12]' : 'text-gray-400 hover:text-white'}"
+					>
+						<Network size={14} /> Network
+					</button>
 				</div>
 			</div>
 
 			{#if filteredProfiles.length > 0}
 				{#key filteredProfiles}
-					<SwipeDeck initialProfiles={filteredProfiles} />
+					{#if activeTab === 'swipe'}
+						<SwipeDeck initialProfiles={filteredProfiles} bind:matchedHistory />
+					{:else}
+						<NetworkGraph {filteredProfiles} {extractedSkills} {searchQuery} {matchedHistory} onNodeClick={handleProfileClick} />
+					{/if}
 				{/key}
 			{:else}
 				<div
